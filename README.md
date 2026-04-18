@@ -1,0 +1,2 @@
+# 目的
+本仓库为了自动构建多个基于ubuntu docker，提供Python和nodejs的基础镜像
