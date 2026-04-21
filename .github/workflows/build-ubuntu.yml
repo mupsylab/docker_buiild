@@ -35,5 +35,8 @@ jobs:
         file: ./Dockerfile.ubuntu
         platforms: linux/amd64,linux/arm64
         push: true
+        build-args: |
+          PYTHON_VERSION=3.12.13
+          NODE_VERSION=24.15.0
         tags: |
           ${{ secrets.DOCKER_USERNAME }}/nodepy:ubuntu
