@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-ARG PYTHON_VERSION=3.10.20
+ARG PYTHON_VERSION=3.11.15
 ARG NODE_VERSION=22.22.2
 
 # cannot remove LANG even though https://bugs.python.org/issue19846 is fixed
