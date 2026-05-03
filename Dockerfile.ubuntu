@@ -11,71 +11,73 @@ ENV LANG=C.UTF-8
 ENV PATH=/usr/local/bin:$PATH
 
 # NODE
-RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
-  && case "${dpkgArch##*-}" in \
-    amd64) ARCH='x64';; \
-    ppc64el) ARCH='ppc64le';; \
-    s390x) ARCH='s390x';; \
-    arm64) ARCH='arm64';; \
-    armhf) ARCH='armv7l';; \
-    i386) ARCH='x86';; \
-    *) echo "unsupported architecture"; exit 1 ;; \
-  esac \
-  && set -ex \
-  && apt-get update && apt-get install -y ca-certificates curl wget gnupg dirmngr xz-utils libatomic1 --no-install-recommends \
-  && rm -rf /var/lib/apt/lists/* \
-  && curl -fsSLO --compressed "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH.tar.xz" \
-  && tar -xJf "node-v$NODE_VERSION-linux-$ARCH.tar.xz" -C /usr/local --strip-components=1 --no-same-owner \
-  && rm "node-v$NODE_VERSION-linux-$ARCH.tar.xz" \
-  && find /usr/local/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; \
-  && apt-mark auto '.*' > /dev/null \
-  && find /usr/local -type f -executable -exec ldd '{}' ';' \
-      | awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); print so }' \
-      | sort -u \
-      | xargs -r dpkg-query --search \
-      | cut -d: -f1 \
-      | sort -u \
-      | xargs -r apt-mark manual \
-  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-  && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
-  && node --version \
-  && npm --version \
-  && rm -rf /tmp/*
+RUN groupadd --gid 1000 mupsy \
+	&& useradd --uid 1000 --gid mupsy --shell /bin/bash --create-home mupsy \
+	&& ARCH= && dpkgArch="$(dpkg --print-architecture)" \
+	&& case "${dpkgArch##*-}" in \
+	amd64) ARCH='x64';; \
+	ppc64el) ARCH='ppc64le';; \
+	s390x) ARCH='s390x';; \
+	arm64) ARCH='arm64';; \
+	armhf) ARCH='armv7l';; \
+	i386) ARCH='x86';; \
+	*) echo "unsupported architecture"; exit 1 ;; \
+	esac \
+	&& set -ex \
+	&& apt-get update && apt-get install -y ca-certificates curl wget gnupg dirmngr xz-utils libatomic1 --no-install-recommends \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& curl -fsSLO --compressed "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH.tar.xz" \
+	&& tar -xJf "node-v$NODE_VERSION-linux-$ARCH.tar.xz" -C /usr/local --strip-components=1 --no-same-owner \
+	&& rm "node-v$NODE_VERSION-linux-$ARCH.tar.xz" \
+	&& find /usr/local/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; \
+	&& apt-mark auto '.*' > /dev/null \
+	&& find /usr/local -type f -executable -exec ldd '{}' ';' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); print so }' \
+		| sort -u \
+		| xargs -r dpkg-query --search \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -r apt-mark manual \
+	&& apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+	&& ln -s /usr/local/bin/node /usr/local/bin/nodejs \
+	&& node --version \
+	&& npm --version \
+	&& rm -rf /tmp/*
 
 # PYTHON
 RUN set -eux; \
 # runtime dependencies
-  apt-get update; \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates \
-	netbase \
-	tzdata \
-	dpkg-dev \
-	gcc \
-	gnupg \
-	libbluetooth-dev \
-	libbz2-dev \
-	libc6-dev \
-	libdb-dev \
-	libffi-dev \
-	libgdbm-dev \
-	liblzma-dev \
-	libncursesw5-dev \
-	libreadline-dev \
-	libsqlite3-dev \
-	libssl-dev \
-	make \
-	tk-dev \
-	uuid-dev \
-	wget \
-	xz-utils \
-	zlib1g-dev ; \
-  rm -rf /var/lib/apt/lists/* ; \
-  savedAptMark="$(apt-mark showmanual)"; \
-  \
+	apt-get update; \
+	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+		ca-certificates \
+		netbase \
+		tzdata \
+		dpkg-dev \
+		gcc \
+		gnupg \
+		libbluetooth-dev \
+		libbz2-dev \
+		libc6-dev \
+		libdb-dev \
+		libffi-dev \
+		libgdbm-dev \
+		liblzma-dev \
+		libncursesw5-dev \
+		libreadline-dev \
+		libsqlite3-dev \
+		libssl-dev \
+		make \
+		tk-dev \
+		uuid-dev \
+		wget \
+		xz-utils \
+		zlib1g-dev ; \
+	rm -rf /var/lib/apt/lists/* ; \
+	savedAptMark="$(apt-mark showmanual)"; \
+	\
 # 下载
-  wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz"; \
-  mkdir -p /usr/src/python; \
+	wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz"; \
+	mkdir -p /usr/src/python; \
 	tar --extract --directory /usr/src/python --strip-components=1 --file python.tar.xz; \
 	rm python.tar.xz; \
 	\
@@ -151,3 +153,5 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y git --no-install-recommends; \
 	rm -rf /var/lib/apt/lists/*
+
+

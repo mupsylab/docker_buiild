@@ -12,7 +12,9 @@ ENV PATH=/usr/local/bin:$PATH
 WORKDIR /app
 
 # NODE
-RUN apk add --no-cache \
+RUN addgroup -g 1000 mupsy \
+	adduser -u 1000 -G mupsy -s /bin/sh -D mupsy \
+	apk add --no-cache \
         libstdc++ \
     && apk add --no-cache --virtual .build-deps \
         curl \
